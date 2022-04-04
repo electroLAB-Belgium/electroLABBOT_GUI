@@ -44,4 +44,7 @@ const uint16_t IR_threshold = 1000;
 #define ALL_MOTORS_STOP 3
 #define ALL_MOTORS_DETACH 6
 
+
+/* Buzzer related constants */
+#define BUZZER_PIN 25
 #endif

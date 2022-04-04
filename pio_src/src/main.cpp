@@ -53,75 +53,14 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
             billy.move_right(json["motor_b"]);
         }
 
-        // billy.led(LED_BUILTIN, json["led_builtin"].as<bool>() );
-        // JSONVar object = JSON.parse((char *)data);
+        if (json.containsKey("distance_sensor_angle")) {
+            billy.move_head(json["distance_sensor_angle"]);
+        }
 
-        // if (JSON.typeof(object) == "undefined") {
-        //     Serial.println("Parsing input failed!");
-        //     return;|
-        // }
-
-        // Serial.print("JSON.typeof(object) = ");
-        // Serial.println(JSON.typeof(object));
-
-        // // Serial.print("object.keys() = ");
-        // // Serial.println(object.keys());
-        // // Serial.print("object.keys().length() = ");
-        // // Serial.println(object.keys().length());
-        // int number_of_objects = object.keys().length();
-        // for (int index(0); index < number_of_objects; index++) {
-        //     Serial.print("object.keys().length() = ");
-        //     Serial.println(object.keys().length());
-        //     JSONVar key = object.keys()[index];
-        //     // Serial.print(key);
-        //     // Serial.print(": ");
-        //     // Serial.println(object[key]);
-
-        //     if (key == JSONVar("led_builtin")) {
-        //         Serial.print("int(object[key]): ");
-        //         Serial.println(int(object[key]));
-        //         int(object[key]) ? billy.led_on(LED_BUILTIN)
-        //                           : billy.led_off(LED_BUILTIN);
-        //     }
-
-        //     else if (key == JSONVar("rgb_0")) {
-        //         billy.rgb_set_color(0, int(object[key][0]),
-        //         int(object[key][1]),
-        //                             int(object[key][2]));
-        //     }
-
-        //     else if (key == JSONVar("rgb_1")) {
-        //         billy.rgb_set_color(1, int(object[key][0]),
-        //         int(object[key][1]),
-        //                             int(object[key][2]));
-        //     }
-
-        //     else if (key == JSONVar("rgb_2")) {
-        //         billy.rgb_set_color(2, int(object[key][0]),
-        //         int(object[key][1]),
-        //                             int(object[key][2]));
-        //     }
-
-        //     else if (key == JSONVar("rgb_3")) {
-        //         billy.rgb_set_color(3, int(object[key][0]),
-        //         int(object[key][1]),
-        //                             int(object[key][2]));
-        //     }
-
-        //     else if (key == JSONVar("motor_a")) {
-        //         billy.move_left(-int(object[key]));
-        //     }
-
-        //     else if (key == JSONVar("motor_b")) {
-        //         billy.move_right(-int(object[key]));
-        //     }
-        // }
-
-        // // if (strcmp((char *)data,
-        // // "toggle") == 0) {
-        // //     ledState = !ledState;
-        // //     notifyClients();
-        // // }
+        if (json.containsKey("buzzer")) {
+            pinMode(BUZZER_PIN, OUTPUT);
+            digitalWrite(BUZZER_PIN, json["buzzer"]);
+        }
     }
 }
 
@@ -150,14 +89,12 @@ void initWebSocket() {
 }
 
 void setup() {
-    // pinMode(LED_BUILTIN, OUTPUT);
-
     Serial.begin(115200);
     Serial.println();
     Serial.println("Configuring access point...");
-    // billy.rgb_set_color(LED_all, 0, 30, 0);
 
     // You can remove the password parameter if you want the AP to be open.
+    // So I don't have to type in my password every time I connect to the AP.
     String ssid = "electroLABBOT";
     String wifi_mac_address = WiFi.macAddress();
     wifi_mac_address.replace(":", "");
@@ -171,9 +108,8 @@ void setup() {
     IPAddress gateway_ip(192, 168, 100, 1);
     WiFi.softAPConfig(access_point_ip, gateway_ip, netmask_ip);
 
-    IPAddress myIP = WiFi.softAPIP();
     Serial.print("AP IP address: ");
-    Serial.println(myIP);
+    Serial.println(WiFi.softAPIP());
 
     initWebSocket();
     server.begin();

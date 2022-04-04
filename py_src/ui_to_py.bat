@@ -1,0 +1,1 @@
+py -3.10 ui_to_py_converter.py vue_principale.ui vue_principale.py

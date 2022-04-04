@@ -1,0 +1,1 @@
+pyqt6-tools.exe designer vue_principale.ui

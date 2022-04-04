@@ -46,5 +46,9 @@ const uint16_t IR_threshold = 1000;
 
 
 /* Buzzer related constants */
-#define BUZZER_PIN 25
+const uint8_t BUZZER_PIN = 15;
+
+/* Button related constants */
+const uint8_t BUTTON_1 = 33;
+const uint8_t BUTTON_2 = 25;
 #endif

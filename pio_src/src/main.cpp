@@ -13,6 +13,25 @@ ElectroLABBOT billy;
 
 // void notifyClients() { ws.textAll(String(ledState)); }
 
+void send_sensors_values(uint32_t refresh_delay = 100) {
+    static DynamicJsonDocument root(200);
+    static uint32_t last_send_time = millis();
+
+    if (millis() - last_send_time > refresh_delay) {
+        root["distance"] = billy.look();
+        // root["button_1"] = digitalRead(BUTTON_1);
+        // root["button_2"] = digitalRead(BUTTON_2);
+        // Serial.println("Sending sensors values");
+        // Serial.println(digitalRead(BUTTON_1));
+
+        String json;
+        serializeJson(root, json);
+        ws.textAll(json);
+        last_send_time = millis();
+        Serial.println(json);
+    }
+}
+
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
     AwsFrameInfo *info = (AwsFrameInfo *)arg;
     if (info->final && info->index == 0 && info->len == len &&
@@ -116,4 +135,8 @@ void setup() {
     Serial.println("Server started");
 }
 
-void loop() { ws.cleanupClients(); }
+void loop() {
+    ws.cleanupClients();
+    // server.loop();
+    send_sensors_values();
+}

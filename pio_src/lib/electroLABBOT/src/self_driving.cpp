@@ -1,7 +1,6 @@
 #include "electroLABBOT.h"
 
 double last_look;
-// int vect_ir[10];
 
 Self_driving::Self_driving() {
     pinMode(IR_SENSOR_1, INPUT);
@@ -13,28 +12,28 @@ void Self_driving::self_driving_ultrason(uint8_t vitesse_pourcent,
                                          uint8_t stop_distance) {
     Serial.println("Self_driving");
 
+    // If the path is free, we keep going
     if (look_where_you_step(stop_distance) == KEEP_GOING) {
-        // Serial.println("\t KEEP GOING");
         move_head(90);
         move(vitesse_pourcent, vitesse_pourcent);
     }
 
+    // Else, we stop and we look around
     else {
-        // Serial.println("\t STOP");
         move(0, 0);
         delay(1000);
 
         switch (look_around()) {
+            // Left side is free
             case LEFT_FREE:
-                // Serial.println("\t \t LEFT_FREE");
                 move(vitesse_pourcent, vitesse_pourcent);
                 delay(1000);
                 move(0, 0);
                 delay(1000);
                 break;
 
+            // Right side is free
             case RIGHT_FREE:
-                // Serial.println("\t \t RIGHT_FREE");
                 move(vitesse_pourcent, vitesse_pourcent);
                 move(vitesse_pourcent, vitesse_pourcent);
                 delay(1000);
@@ -42,11 +41,12 @@ void Self_driving::self_driving_ultrason(uint8_t vitesse_pourcent,
                 delay(1000);
                 break;
 
+            // Both sides are not free
             case NO_FREE:
-                Serial.println("\t \t NO FREE");
                 move(vitesse_pourcent, vitesse_pourcent);
                 delay(2000);
                 break;
+
             default:
                 Serial.println("default case switch self_driving");
                 break;
@@ -76,13 +76,9 @@ void Self_driving::self_driving_IR(uint8_t vitesse_pourcent) {
     else if (ir_sens_2_value > IR_threshold && ir_sens_1_value > IR_threshold) {
         // Aller vers la gauche
         move(0, vitesse_pourcent);
-        // Serial.println("Left wheels stop");
     }
 
     else {
         move(vitesse_pourcent, vitesse_pourcent);
-        // Serial.println("All wheels forward");
     }
-    // couleur claire : petite valeur
-    // couleur foncé  : grande valeur
 }

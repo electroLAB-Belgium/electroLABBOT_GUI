@@ -4,8 +4,6 @@ Servo servo;
 bool attach = false;
 
 Head::Head() {
-    // Serial.println("attach servo");
-    // digitalWrite(LED_BUILTIN, HIGH);
     servo.attach(pin_servo);
     // le attach ne se fait pas pourtant le constructeur est réalisé ...
 }
@@ -26,26 +24,19 @@ uint8_t Head::look_around() {
     double distance_left_side = 0;
     double distance_right_side = 0;
 
-    // Serial.println("\r\n move_head(180)");
     move_head(180);
-    while (servo.read() < 179)
-        ;
+    while (servo.read() < 179) {
+        continue;
+    }
     delay(1000);
     distance_left_side = look();
-    /*
-    Serial.print("distance_left_side \t ");
-    Serial.println(distance_left_side);
-    Serial.println("\r\n move_head(10)");
-    */
+
     move_head(5);
-    while (servo.read() > 11)
-        ;
+    while (servo.read() > 11) {
+        continue;
+    }
     delay(1000);
     distance_right_side = look();
-    /*
-    Serial.print("distance_right_side \t ");
-    Serial.println(distance_right_side);
-    */
 
     if (distance_left_side < 8 && distance_right_side < 8)
         return NO_FREE;
@@ -77,15 +68,17 @@ double Head::look() {
     start_time = micros();
     ancien_etat = digitalRead(pin_ultrason);
     while (ancien_etat == digitalRead(pin_ultrason) &&
-           ((micros() - start_time) < 40000))
-        ;
+           ((micros() - start_time) < 40000)) {
+        continue;
+    }
 
     start_time = micros();
 
     ancien_etat = digitalRead(pin_ultrason);
     while (ancien_etat == digitalRead(pin_ultrason) &&
-           ((micros() - start_time) < 40000))
-        ;
+           ((micros() - start_time) < 40000)) {
+        continue;
+    }
 
     stop_time = micros();
 
@@ -97,11 +90,5 @@ double Head::look() {
 }
 
 uint8_t Head::look_where_you_step(uint8_t stop_distance) {
-    // if (look() > stop_distance)
-    //     return KEEP_GOING;
-    // else
-    //     return STOP;
-
-    // return PROBLEM;
     return look() > stop_distance ? KEEP_GOING : STOP;
 }

@@ -37,7 +37,8 @@ class Head {
     void move_head(int16_t);
     double look();
     uint8_t look_around();
-    uint8_t look_where_you_step(uint8_t);  // regarde où tu mets les pieds !
+    // regarde où tu mets les pieds !
+    uint8_t look_where_you_step(uint8_t);
 };
 
 class Motors {

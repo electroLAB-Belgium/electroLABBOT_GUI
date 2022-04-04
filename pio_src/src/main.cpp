@@ -19,10 +19,8 @@ void send_sensors_values(uint32_t refresh_delay = 100) {
 
     if (millis() - last_send_time > refresh_delay) {
         root["distance"] = billy.look();
-        // root["button_1"] = digitalRead(BUTTON_1);
-        // root["button_2"] = digitalRead(BUTTON_2);
-        // Serial.println("Sending sensors values");
-        // Serial.println(digitalRead(BUTTON_1));
+        root["button_1"] = digitalRead(BUTTON_1);
+        root["button_2"] = digitalRead(BUTTON_2);
 
         String json;
         serializeJson(root, json);
@@ -133,6 +131,9 @@ void setup() {
     initWebSocket();
     server.begin();
     Serial.println("Server started");
+
+    pinMode(BUTTON_1, INPUT);
+    pinMode(BUTTON_2, INPUT);
 }
 
 void loop() {

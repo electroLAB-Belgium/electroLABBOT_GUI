@@ -16,7 +16,6 @@ import traceback
 import warnings
 from time import sleep, perf_counter_ns
 from functools import partial
-from numpy import rec
 
 import websocket
 # import git
@@ -135,6 +134,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
     # state_changed = pyqtSignal(bool)
     change_main_window_title = pyqtSignal(str)
     change_distance_sensor_value = pyqtSignal(str)
+    change_state_button_1 = pyqtSignal(str)
+    change_state_button_2 = pyqtSignal(str)
     # ok_changed = pyqtSignal(bool)
     # show_qmessagebox_exception = pyqtSignal(dict)
     # set_wait_cursor = pyqtSignal()  # type(None)
@@ -255,10 +256,12 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.buzzer_button.pressed.connect(self.buzzer_button_pressed)
         self.buzzer_button.released.connect(self.buzzer_button_released)
 
-        # Set distance angle sensor slots and signals
+        # Set distance angle sensor and buttons slots and signals
         self.slider_ultrasonic_sensor_angle.valueChanged.connect(
             self.distance_sensor_angle_changed)
         self.change_distance_sensor_value.connect(self.distance_label.setText)
+        self.change_state_button_1.connect(self.state_button_1.setText)
+        self.change_state_button_2.connect(self.state_button_2.setText)
 
         # Parameters
         self.Appliquer.clicked.connect(self.save_preferences)
@@ -289,13 +292,17 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
         # Create a QThread to avoid to hang the main process
         self.threadpool = QThreadPool()
-        self.threadpool.setMaxThreadCount(2)
+        self.threadpool.setMaxThreadCount(3)
         self.event_stop = threading.Event()
         self.key_event_worker = Worker(self.keys_events_process)
         self.threadpool.start(self.key_event_worker)
         self.change_main_window_title.connect(self.setWindowTitle)
+        self.app_websocket = websocket.WebSocket()
         self.websocket_worker = Worker(self.websocket_process)
         self.threadpool.start(self.websocket_worker)
+        self.websocket_received_message_worker = Worker(
+            self.websocket_received_message_process)
+        self.threadpool.start(self.websocket_received_message_worker)
 
     def closeEvent(self, a0: QCloseEvent) -> None:
         """Close everything cleanly."""
@@ -400,24 +407,26 @@ class MainApp(QMainWindow, Ui_MainWindow):
                 websocket_url = f'ws://{ip_address}:{port}/ws'
                 self.change_main_window_title.emit(
                     f'{self.base_title} - {ip_address}:{port} - Connexion...')
-                
-                app_websocket = websocket.WebSocket()
-                app_websocket.connect(websocket_url)
+
+                # websocket.enableTrace(True)
+                self.app_websocket.connect(websocket_url)
+
                 self.change_main_window_title.emit(
                     f'{self.base_title} - {ip_address}:{port} - Connecté')
-                
+
                 # Set RGB LED on connection
                 rgb_leds = []
                 for index in range(4):
                     rgb = preferences.get(f'rgb_{index}', [0, 0, 0])
                     rgb_leds.append(f'"rgb_{index}": {rgb}')
                 rgb_leds = f'{{{", ".join(rgb_leds)}}}'
-                app_websocket.send(rgb_leds)
+                self.app_websocket.send(rgb_leds)
 
                 # Set builtin LED on connection
                 led_builtin_state = preferences.get('led_builtin', True)
                 led_builtin_state = 'true' if led_builtin_state else 'false'
-                app_websocket.send(f'{{"led_builtin": {led_builtin_state}}}')
+                self.app_websocket.send(
+                    f'{{"led_builtin": {led_builtin_state}}}')
                 sleep(1)
 
                 while not self.event_stop.is_set():
@@ -425,26 +434,39 @@ class MainApp(QMainWindow, Ui_MainWindow):
                     command = self.command_queue.get()
                     print(command)
                     if command:
-                        app_websocket.send(str(command))
-                    
-                    # received_message = app_websocket.recv()
-                    # while received_message != '' and not self.event_stop.is_set() and self.command_queue.empty():
-                    #     print(f'{received_message = }')
-                    #     received_message = app_websocket.recv()
-                        # json_message = json.loads(received_message)
+                        self.app_websocket.send(str(command))
 
-                        # if 'distance' in json_message:
-                        #     self.change_distance_sensor_value.emit(
-                        #     json_message['distance'])
-                        
-                    # sleep(0.1)
-
+                    # Receive the response
             except Exception:
                 self.change_main_window_title.emit(
                     f'{self.base_title} - {ip_address}:{port} - Déconnecté')
                 print(traceback.format_exc())
                 sleep(1)
                 continue
+
+    def websocket_received_message_process(self):
+        while not self.event_stop.is_set():
+            try:
+                received_message = self.app_websocket.recv()
+                json_message = json.loads(received_message)
+
+                if 'distance' in json_message:
+                    distance = json_message["distance"]
+                    if distance == 501:
+                        distance = 'erreur'
+                    self.change_distance_sensor_value.emit(
+                        f'{distance}'.replace('.', ','))
+                
+                if 'button_1' in json_message:
+                    self.change_state_button_1.emit(
+                        f'{json_message["button_1"]}')
+
+                if 'button_2' in json_message:
+                    self.change_state_button_2.emit(
+                        f'{json_message["button_2"]}')
+
+            except websocket._exceptions.WebSocketConnectionClosedException:
+                sleep(1)
 
     def buzzer_button_pressed(self):
         self.command_queue.put(f'{{ "buzzer": true }}')

@@ -4,6 +4,8 @@ import re
 import sys
 from functools import reduce
 
+import esptool
+from PyQt6.QtCore import pyqtSignal, QObject
 
 # Files and directories related functions
 def list_files(path: str):
@@ -99,7 +101,7 @@ def split_keep_sep(string, separator):
         separator: the separator to use and to keep.
 
     Returns:
-        A list with the splited elements.
+        A list with the spliced elements.
     """
     return reduce(
         lambda acc, elem: acc[:-1] + [acc[-1] + elem] if elem == separator
@@ -124,6 +126,86 @@ def resource_path(relative_path: str):
     )
 
     return os.path.join(base_path, relative_path)
+
+
+def flash(command: list):
+    """Flash the ESP32.
+
+    This function is wrapping the esptool.main() function.
+
+    Args:
+        command: a list of string whom constitute the command.
+
+    Returns:
+        True if the command succeed, False otherwise.
+    """
+    try:
+        esptool.main(command)
+        return True
+
+    except Exception as error:
+        print(f'\nError:\n{error}\n')
+        # import traceback
+        # traceback.print_exc()
+        return False
+
+
+# https://stackoverflow.com/a/11764381/10949679
+class XStream(QObject):
+    """Capture the stdout stream."""
+    _stdout = None
+    _stderr = None
+
+    message_written = pyqtSignal(str)
+
+    @staticmethod
+    def isatty():
+        """The stream is interactive."""
+        return True
+
+    @staticmethod
+    def flush():
+        """Flush stream, here, has no effect."""
+        return
+
+    @staticmethod
+    def fileno():
+        """Return fileline."""
+        return -1
+
+    def write(self, text: str):
+        """Write in the stream.
+
+        Args:
+            self: self.
+            text: string to write in the stream.
+        """
+        if not self.signalsBlocked():
+            self.message_written.emit(text)
+
+    @staticmethod
+    def stdout():
+        """Capture sys.stdout in this stream.
+
+        Returns:
+            The new XStream._stdout attribute.
+        """
+        if not XStream._stdout:
+            XStream._stdout = XStream()
+            sys.stdout = XStream._stdout
+        return XStream._stdout
+
+    @staticmethod
+    def stderr():
+        """Capture sys.stderr in this stream.
+
+        Returns:
+            The new XStream._stderr attribute.
+        """
+        if not XStream._stderr:
+            XStream._stderr = XStream()
+            sys.stderr = XStream._stderr
+        return XStream._stderr
 
 
 if __name__ == '__main__':

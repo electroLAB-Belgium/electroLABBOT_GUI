@@ -36,7 +36,7 @@ jobs:
 
     - name: Build the GUI package (EEG anonymiser GUI, EEG_anonymiser.exe)
       run: >
-        py -3.10-64 -m PyInstaller -F --workpath ./py_src/build --distpath ./ --specpath ./py_src/ --clean -n "electroLABBOT - Télecommande" --icon=./ico/icon.ico --add-data './ico/;ico' .\py_src\gui.pyw
+        py -3.10-64 -m PyInstaller -F --workpath ./py_src/build --distpath ./ --specpath ./py_src/ --clean -n "electroLABBOT - Télecommande" --icon=./package_data/icon.ico --add-data './package_data/;ico' .\py_src\gui.pyw
 
     - name: >
         Upload the artefact (.exe)

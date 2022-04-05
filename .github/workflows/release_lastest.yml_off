@@ -44,13 +44,13 @@ jobs:
       run: >
         py -3.10-64 -m PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n anonymiser
-        --icon=./ico/fpms_anonymous.ico ./anonymiser.py
+        --icon=./package_data/fpms_anonymous.ico ./anonymiser.py
 
     - name: Build the second package (converter, coh3toEDF.exe)
       run: >
         py -3.10-64 -m PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n coh3toEDFbatch
-        --icon=./ico/fpms.ico ./coh3toEDF.py
+        --icon=./package_data/fpms.ico ./coh3toEDF.py
 
     - name: Generate the anonymiser GUI Python script from the .ui file
       run: |
@@ -62,14 +62,14 @@ jobs:
       run: >
         py -3.10-64 -m PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n EEG_anonymiser
-        --icon=./ico/fpms_anonymous.ico
-        --add-data './ico/;ico' .\anonymiser_gui.pyw
+        --icon=./package_data/fpms_anonymous.ico
+        --add-data './package_data/;ico' .\anonymiser_gui.pyw
 
     - name: Build the fourth package (dataset maker, dataset_maker.exe)
       run: >
         py -3.10-64 -m PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n dataset_maker
-        --icon=./ico/fpms.ico ./dataset_maker.py
+        --icon=./package_data/fpms.ico ./dataset_maker.py
 
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:

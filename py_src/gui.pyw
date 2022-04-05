@@ -4,12 +4,13 @@ Compile the GUI:
 
 pyinstaller.exe -F --clean  --add-data './data/;data'
 -n "name" --windowed
---icon=ico/logo.ico .\gui_main.pyw
+--icon=package_data/logo.ico .\gui_main.pyw
 """
 import ctypes
 import json
 import multiprocessing as mp
 import os
+import re
 import sys
 import threading
 import traceback
@@ -24,28 +25,20 @@ import websocket
 from PyQt6.QtCore import (
     pyqtSlot,
     Qt,
-    QUrl,
     pyqtSignal,
+    QObject,
     QThreadPool,
     QRunnable,
 )
 from PyQt6.QtGui import (
-    QDesktopServices,
-    QStandardItemModel,
     QIcon,
-    QStandardItem,
     QColor,
     QCloseEvent,
-    QIntValidator,
     QValidator,
 )
 from PyQt6.QtWidgets import (
-    QAbstractItemView,
     QApplication,
-    QDialog,
     QMainWindow,
-    QMessageBox,
-    QFileDialog,
     QColorDialog,
 )
 
@@ -58,8 +51,10 @@ from vue_principale import Ui_MainWindow  # noqa: E402
 # from gui_anonymiser_settings import Ui_Settings_dialog  # noqa: E402
 from utils import (  # noqa E402
     ensure_path,
-    # list_files,
+    flash,
     resource_path,
+    split_keep_sep,
+    XStream,
 )
 
 check_state_converter = {
@@ -104,9 +99,10 @@ class QIntValidatorFixup(QValidator):
     def fixup(self, string):
         return str(int(string))
 
-
 # Worker class for the QThread handler
 # https://stackoverflow.com/questions/50855210/how-to-pass-parameters-into-qrunnable-for-PyQt6
+
+
 class Worker(QRunnable):  # pylint: disable=too-few-public-methods
     """Worker class to run a function in a QThread."""
 
@@ -128,18 +124,18 @@ class MainApp(QMainWindow, Ui_MainWindow):
     MainApp class inherit from QMainWindow and from
     Ui_MainWindow class in UiMainApp module.
     """
-    # progress_changed = pyqtSignal(int)
-    # progress_text_changed = pyqtSignal(str)
-    # progress_style_changed = pyqtSignal(str)
+    progress_changed = pyqtSignal(int)
+    progress_text_changed = pyqtSignal(str)
+    progress_style_changed = pyqtSignal(str)
     # state_changed = pyqtSignal(bool)
     change_main_window_title = pyqtSignal(str)
     change_distance_sensor_value = pyqtSignal(str)
     change_state_button_1 = pyqtSignal(str)
     change_state_button_2 = pyqtSignal(str)
-    # ok_changed = pyqtSignal(bool)
+    flash_button_changed = pyqtSignal(bool)
     # show_qmessagebox_exception = pyqtSignal(dict)
-    # set_wait_cursor = pyqtSignal()  # type(None)
-    # set_restore_cursor = pyqtSignal()
+    set_wait_cursor = pyqtSignal()  # type(None)
+    set_restore_cursor = pyqtSignal()
     leds_colors = {
         0: QColor(255, 255, 0),
         1: QColor(255, 0, 0),
@@ -199,21 +195,23 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.lineEdit_port.setValidator(QIntValidatorFixup(0, 65535, self))
 
         # Set progress bar and slots
-        # self.progress_bar.setValue(0)
-        # self.progress_changed.connect(self.progress_bar.setValue)
-        # self.progress_bar.setFormat('IDLE')
-        # self.progress_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        # self.progress_text_changed.connect(self.progress_bar.setFormat)
-        # self.progress_style_changed.connect(self.progress_bar.setStyleSheet)
+        self.progress_changed.connect(self.progress_bar.setValue)
+        self.progress_changed.emit(0)
+        self.progress_bar.setFormat('Inactif')
+        self.progress_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.progress_text_changed.connect(self.progress_bar.setFormat)
+        self.progress_style_changed.connect(self.progress_bar.setStyleSheet)
+        self.flash_button.clicked.connect(self.flash_electrolabbot)
+        self.flash_button_changed.connect(self.flash_button.setEnabled)
 
         # Configure qmessagebox for exception via signals
         # self.show_qmessagebox_exception.connect(self.show_critical_exception)
 
         # Change cursor using pyqtSignal
-        # self.set_wait_cursor.connect(
-        #     lambda: QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor),
-        # )
-        # self.set_restore_cursor.connect(QApplication.restoreOverrideCursor)
+        self.set_wait_cursor.connect(
+            lambda: QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor),
+        )
+        self.set_restore_cursor.connect(QApplication.restoreOverrideCursor)
 
         self.load_preferences()
 
@@ -292,7 +290,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
         # Create a QThread to avoid to hang the main process
         self.threadpool = QThreadPool()
-        self.threadpool.setMaxThreadCount(3)
+        self.threadpool.setMaxThreadCount(4)
         self.event_stop = threading.Event()
         self.key_event_worker = Worker(self.keys_events_process)
         self.threadpool.start(self.key_event_worker)
@@ -303,6 +301,109 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.websocket_received_message_worker = Worker(
             self.websocket_received_message_process)
         self.threadpool.start(self.websocket_received_message_worker)
+        self.console_worker = Worker(self._flash)
+
+        # Create a "console"
+        # This buffer will keep the last line ...\n
+        self.lastline_raw_buffer = ''
+        # This one allows to avoid to write two times the same content
+        self.lastline_list = ['']
+        # Install the custom output stream
+        XStream.stdout().message_written.connect(self.data_ready)
+        XStream.stderr().message_written.connect(self.data_ready)
+
+        # Don't allow the user to move the cursor
+        self.console.setReadOnly(True)
+
+    def data_ready(self, text: str):
+        """Insert the text in the console widget.
+
+        Args:
+            self: self.
+            text: the text to add to the console.
+        """
+        cursor = self.console.textCursor()
+        # Well I don't want to deal with that
+        lines = text.replace('\r\n', '\n')
+        lines = split_keep_sep(lines, '\n')
+
+        for line in lines:
+            # print(line, file=sys.__stdout__)
+
+            if line != '' and line != '\n':
+                regex = '([0-9]+)[\\s]+%'
+                match = re.findall(regex, line)
+                progress = -1
+
+                if match:
+                    progress = int(match[-1])
+                # print(f'{line = }', file=sys.__stdout__)
+                # print(progress, file=sys.__stdout__)
+
+                if progress != -1:
+                    self.progress_changed.emit(progress)
+                    self.progress_text_changed.emit(
+                        f'Programmation en cours... ({progress}%)')
+                else:  # 'Success!' in line:
+                    self.progress_changed.emit(0)
+                    self.progress_text_changed.emit('Inactif')
+
+            # Append line to the last raw line
+            self.lastline_raw_buffer += line
+
+            # Only takes the last line
+            sep = split_keep_sep(self.lastline_raw_buffer, '\n')
+
+            # Avoid to print two time the same line
+            if self.lastline_list == sep:
+                return
+
+            self.lastline_list = sep
+
+            # Extract last line to display
+            if sep[-1] == '' and len(sep) > 1:
+                self.lastline_raw_buffer = sep[-2]
+
+            else:
+                self.lastline_raw_buffer = sep[-1]
+
+            # Emulate the carrierage return behaviour
+            if '\r' in self.lastline_raw_buffer:
+                cursor.movePosition(cursor.MoveOperation.End)
+                # https://stackoverflow.com/a/19237185/10949679
+                cursor.select(cursor.SelectionType.LineUnderCursor)
+                cursor.removeSelectedText()
+
+                temp = ['']
+
+                if self.lastline_raw_buffer.endswith('\n'):
+                    fragments = self.lastline_raw_buffer[:-1].split('\r')
+
+                else:
+                    fragments = self.lastline_raw_buffer.split('\r')
+
+                for fragment in fragments:
+                    for index, frag in enumerate([fragment]):
+                        try:
+                            temp[index] = frag
+
+                        except IndexError:
+                            temp.append(frag)
+
+                line = ''.join(temp)
+
+            cursor.movePosition(cursor.MoveOperation.End)
+            cursor.insertText(line)
+
+            # Add the newline if necessary
+            if self.lastline_raw_buffer.endswith('\n'):
+                if '\r' in self.lastline_raw_buffer:
+                    cursor.insertText('\n')
+                cursor.movePosition(cursor.MoveOperation.End)
+
+            # Make the cursor visible
+            self.console.ensureCursorVisible()
+            self.console.setTextCursor(cursor)
 
     def closeEvent(self, a0: QCloseEvent) -> None:
         """Close everything cleanly."""
@@ -432,7 +533,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
                 while not self.event_stop.is_set():
                     # Send the command
                     command = self.command_queue.get()
-                    print(command)
+                    print(command, file=sys.__stdout__)
                     if command:
                         self.app_websocket.send(str(command))
 
@@ -440,7 +541,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
             except Exception:
                 self.change_main_window_title.emit(
                     f'{self.base_title} - {ip_address}:{port} - Déconnecté')
-                print(traceback.format_exc())
+                print(traceback.format_exc(), file=sys.__stderr__)
                 sleep(1)
                 continue
 
@@ -456,7 +557,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
                         distance = 'erreur'
                     self.change_distance_sensor_value.emit(
                         f'{distance}'.replace('.', ','))
-                
+
                 if 'button_1' in json_message:
                     self.change_state_button_1.emit(
                         f'{json_message["button_1"]}')
@@ -467,6 +568,52 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
             except websocket._exceptions.WebSocketConnectionClosedException:
                 sleep(1)
+
+    def flash_electrolabbot(self):
+        self.flash_button_changed.emit(False)
+        self.threadpool.start(self.console_worker)
+
+    def _flash(self):
+        """Flash the ESP32.
+
+        - Disable the buttons
+        - Flashes the ESP32
+        - Enable the buttons
+        """
+
+        command = ['--chip',
+                   'esp32',
+                   '--baud',
+                   '921600',
+                   '--before',
+                   'default_reset',
+                   '--after',
+                   'hard_reset',
+                   'write_flash',
+                   '-z',
+                   '--flash_mode',
+                   'dio',
+                   '--flash_freq',
+                   '80m',
+                   '--flash_size',
+                   'detect',
+                   '0x10000',
+                   resource_path('package_data\\firmware.bin'),
+                   ]
+
+        # print('Using command %s' % ' '.join(command))
+        print('Start flashing...')
+
+        try:
+            if flash(command):
+                print('Success!\n')
+            else:
+                print('Fail!\n')
+
+        except OSError:
+            print('\nUnexpected error (check port connection).\n')
+
+        self.flash_button_changed.emit(True)
 
     def buzzer_button_pressed(self):
         self.command_queue.put(f'{{ "buzzer": true }}')
@@ -635,7 +782,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
     #         for filename in filenames:
     #             item = QStandardItem()
     #             item.setText(filename)
-    #             item.setIcon(QIcon(resource_path('ico/file.svg')))
+    #             item.setIcon(QIcon(resource_path('package_data/file.svg')))
     #             self.source_list_model.appendRow(item)
 
     #         self.OK.setEnabled(True)
@@ -675,7 +822,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
     #         self.source_list_model.clear()
     #         item = QStandardItem()
     #         item.setText(folder)
-    #         item.setIcon(QIcon(resource_path('ico/folder.svg')))
+    #         item.setIcon(QIcon(resource_path('package_data/folder.svg')))
     #         self.source_list_model.appendRow(item)
 
     #         self.path = folder
@@ -811,7 +958,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
             FileNotFoundError,
             json.decoder.JSONDecodeError,
         ):
-            print('Error saving preferences, file not found.')
+            print('Error saving preferences, file not found.', file=sys.__stderr__)
 
         if self.spinBox_left_high_forward.value() > self.pwm_max_value.value():
             self.spinBox_left_high_forward.setValue(self.pwm_max_value.value())
@@ -954,7 +1101,7 @@ if __name__ == '__main__':
     # Launch the main app.
     MyApplication = MainApp()
     MyApplication.show()  # Show the form
-    icon_path = resource_path('ico/icon.ico')
+    icon_path = resource_path('package_data/icon.ico')
     app.setWindowIcon(QIcon(icon_path))
     MyApplication.setWindowIcon(QIcon(icon_path))
     sys.exit(app.exec())  # Execute the app

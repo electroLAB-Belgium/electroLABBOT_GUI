@@ -13,7 +13,6 @@ import os
 import re
 import sys
 import threading
-from tkinter.ttk import Separator
 import traceback
 import warnings
 from time import sleep, perf_counter_ns
@@ -84,6 +83,9 @@ def altered_print(*args, **kwargs) -> None:
 
     if not hasattr(sys, 'frozen') or no_file:
         file.write(separator.join(text) + str(end))
+
+
+altered_print = print
 
 
 SCRIPT_PATH = exe_path()
@@ -196,9 +198,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
         # Maximize the window
         # self.showMaximized()
 
-        # Set editable line to read only.
-        # self.destination.setReadOnly(True)
-
         # Add validators to text fields
         self.lineEdit_ip_0.setValidator(QIntValidatorFixup(0, 255, self))
         self.lineEdit_ip_1.setValidator(QIntValidatorFixup(0, 255, self))
@@ -220,10 +219,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
         # self.show_qmessagebox_exception.connect(self.show_critical_exception)
 
         # Change cursor using pyqtSignal
-        self.set_wait_cursor.connect(
-            lambda: QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor),
-        )
-        self.set_restore_cursor.connect(QApplication.restoreOverrideCursor)
+        # self.set_wait_cursor.connect(
+        #     lambda: QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor),
+        # )
+        # self.set_restore_cursor.connect(QApplication.restoreOverrideCursor)
 
         self.load_preferences()
 
@@ -553,6 +552,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
             except Exception:
                 self.change_main_window_title.emit(
                     f'{self.base_title} - {ip_address}:{port} - Déconnecté')
+                # print(traceback.format_exc())
                 altered_print(traceback.format_exc(), file=sys.__stderr__)
                 sleep(1)
 
@@ -577,7 +577,12 @@ class MainApp(QMainWindow, Ui_MainWindow):
                     self.change_state_button_2.emit(
                         f'{json_message["button_2"]}')
 
-            except websocket._exceptions.WebSocketConnectionClosedException:
+            # except websocket._exceptions.WebSocketConnectionClosedException:
+            #     altered_print(traceback.format_exc(), file=sys.__stderr__)
+            #     sleep(1)
+            
+            except Exception:
+                altered_print(traceback.format_exc(), file=sys.__stderr__)
                 sleep(1)
 
     def flash_electrolabbot(self):

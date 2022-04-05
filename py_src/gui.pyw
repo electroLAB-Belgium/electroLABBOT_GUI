@@ -27,6 +27,9 @@ from PyQt6.QtCore import (
     pyqtSignal,
     QThreadPool,
     QRunnable,
+    QLocale,
+    QTranslator,
+    QLibraryInfo,
 )
 from PyQt6.QtGui import (
     QIcon,
@@ -580,7 +583,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
             # except websocket._exceptions.WebSocketConnectionClosedException:
             #     altered_print(traceback.format_exc(), file=sys.__stderr__)
             #     sleep(1)
-            
+
             except Exception:
                 altered_print(traceback.format_exc(), file=sys.__stderr__)
                 sleep(1)
@@ -1115,6 +1118,14 @@ if __name__ == '__main__':
         ctypes.windll.kernel32.LocalFree(lp_buffer)
 
     app = QApplication(sys.argv)
+
+    # Set the application translations
+    language = QLocale.system().name()
+    qt_translator = QTranslator()
+    qt_translator.load(f'qt_{language}',
+                       QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath))
+    app.installTranslator(qt_translator)
+
     # Launch the main app.
     MyApplication = MainApp()
     MyApplication.show()  # Show the form

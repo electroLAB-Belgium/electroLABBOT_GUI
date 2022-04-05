@@ -1,3 +1,4 @@
+/* Copyright 2022 electroLABBOT. All rights reserved. */
 #include "electroLABBOT.h"
 
 Motors::Motors() {
@@ -23,9 +24,7 @@ void Motors::move_left(int16_t left_motor_speed) {
 
             left_motor_speed = constrain(left_motor_speed, -4096, 4096);
             ledcWrite(PWM_MOTOR1_CHANNEL, abs(left_motor_speed));
-        }
-
-        else {
+        } else {
             digitalWrite(LEFT_MOTOR_FORWARD, LOW);
             digitalWrite(LEFT_MOTOR_BACKWARD, LOW);
         }
@@ -42,9 +41,7 @@ void Motors::move_right(int16_t right_motor_speed) {
 
             right_motor_speed = constrain(right_motor_speed, -4096, 4096);
             ledcWrite(PWM_MOTOR2_CHANNEL, abs(right_motor_speed));
-        }
-
-        else {
+        } else {
             digitalWrite(RIGHT_MOTOR_FORWARD, LOW);
             digitalWrite(RIGHT_MOTOR_BACKWARD, LOW);
         }

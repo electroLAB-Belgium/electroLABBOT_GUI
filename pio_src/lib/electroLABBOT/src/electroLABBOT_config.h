@@ -1,5 +1,6 @@
-#ifndef ELECTROLABBOT_CONFIG_H
-#define ELECTROLABBOT_CONFIG_H
+/* Copyright 2022 electroLABBOT. All rights reserved. */
+#ifndef PIO_SRC_LIB_ELECTROLABBOT_SRC_ELECTROLABBOT_CONFIG_H_
+#define PIO_SRC_LIB_ELECTROLABBOT_SRC_ELECTROLABBOT_CONFIG_H_
 
 /* Distance sensor parameters */
 #define pin_servo 13
@@ -51,4 +52,4 @@ const uint8_t BUZZER_PIN = 15;
 /* Button related constants */
 const uint8_t BUTTON_1 = 33;
 const uint8_t BUTTON_2 = 25;
-#endif
+#endif  // PIO_SRC_LIB_ELECTROLABBOT_SRC_ELECTROLABBOT_CONFIG_H_

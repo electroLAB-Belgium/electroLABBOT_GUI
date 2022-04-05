@@ -1,3 +1,4 @@
+/* Copyright 2022 electroLABBOT. All rights reserved. */
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <AsyncTCP.h>
@@ -31,15 +32,16 @@ void send_sensors_values(uint32_t refresh_delay = 100) {
 }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
-    AwsFrameInfo *info = (AwsFrameInfo *)arg;
+    AwsFrameInfo *info = reinterpret_cast<AwsFrameInfo *>(arg);
     if (info->final && info->index == 0 && info->len == len &&
         info->opcode == WS_TEXT) {
         data[len] = 0;
         Serial.print("Message Received: ");
-        Serial.println((char *)data);
+        Serial.println(reinterpret_cast<char *>(data));
 
         DynamicJsonDocument json(1024);
-        DeserializationError error = deserializeJson(json, (char *)data);
+        DeserializationError error =
+            deserializeJson(json, reinterpret_cast<char *>(data));
 
         if (error) {
             Serial.print(F("deserializeJson() failed: "));

@@ -5,9 +5,11 @@ import sys
 from functools import reduce
 
 import esptool
-from PyQt6.QtCore import pyqtSignal, QObject
+from PyQt6.QtCore import QObject, pyqtSignal
 
 # Files and directories related functions
+
+
 def list_files(path: str):
     """List all the files in a folder and subfolders.
 

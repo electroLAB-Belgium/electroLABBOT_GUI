@@ -1,3 +1,4 @@
+/* Copyright 2022 electroLABBOT. All rights reserved. */
 #include "electroLABBOT.h"
 
 double last_look;
@@ -16,10 +17,7 @@ void Self_driving::self_driving_ultrason(uint8_t vitesse_pourcent,
     if (look_where_you_step(stop_distance) == KEEP_GOING) {
         move_head(90);
         move(vitesse_pourcent, vitesse_pourcent);
-    }
-
-    // Else, we stop and we look around
-    else {
+    } else {  // Else, we stop and we look around
         move(0, 0);
         delay(1000);
 
@@ -71,14 +69,11 @@ void Self_driving::self_driving_IR(uint8_t vitesse_pourcent) {
     if (ir_sens_1_value < IR_threshold && ir_sens_2_value < IR_threshold) {
         // Aller vers la droite
         move(vitesse_pourcent, 0);
-    }
-
-    else if (ir_sens_2_value > IR_threshold && ir_sens_1_value > IR_threshold) {
+    } else if (ir_sens_2_value > IR_threshold &&
+               ir_sens_1_value > IR_threshold) {
         // Aller vers la gauche
         move(0, vitesse_pourcent);
-    }
-
-    else {
+    } else {
         move(vitesse_pourcent, vitesse_pourcent);
     }
 }

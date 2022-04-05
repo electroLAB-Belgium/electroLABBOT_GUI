@@ -1,5 +1,6 @@
-#ifndef ELECTROLABBOT_H
-#define ELECTROLABBOT_H
+/* Copyright 2022 electroLABBOT. All rights reserved. */
+#ifndef PIO_SRC_LIB_ELECTROLABBOT_SRC_ELECTROLABBOT_H_
+#define PIO_SRC_LIB_ELECTROLABBOT_SRC_ELECTROLABBOT_H_
 #include <Arduino.h>
 #include <ESP32Servo.h>
 #include <FastLED.h>
@@ -13,13 +14,13 @@ class Led {
 
    public:
     Led();
-    Led(int16_t pin_led);
+    explicit Led(int16_t pin_led);
 
     void led_off(int16_t pin_led);
     void led_on(int16_t pin_led);
     void led(int16_t pin_led, bool state);
 
-    void rgb_blink(unsigned long blink_time);
+    void rgb_blink(uint32_t blink_time);
     void rgb_set_color(uint8_t led, uint8_t R, uint8_t G, uint8_t B);
     /*
         led = LED_D11, LED_D12, LED_D13, LED_D14 ou LED_all (pour affecter la
@@ -57,9 +58,9 @@ class Motors {
 
    public:
     Motors();
-    void move_left(int16_t roue_gauche);
-    void move_right(int16_t roue_droite);
-    void move(int16_t roue_droite, int16_t roue_gauche);
+    void move_left(int16_t);
+    void move_right(int16_t);
+    void move(int16_t, int16_t);
 };
 
 void attach_detach_PWM(uint8_t moteur, uint8_t vitesse, uint8_t attach);
@@ -83,4 +84,4 @@ class ElectroLABBOT : public Led, public Self_driving {
     ElectroLABBOT();
 };
 
-#endif
+#endif  // PIO_SRC_LIB_ELECTROLABBOT_SRC_ELECTROLABBOT_H_

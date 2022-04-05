@@ -1,8 +1,9 @@
+/* Copyright 2022 electroLABBOT. All rights reserved. */
 #include "electroLABBOT.h"
 
 bool led_state = false;
-unsigned long previous_millis = 0;
-unsigned long current_millis;
+uint32_t previous_millis = 0;
+uint32_t current_millis;
 
 Led::Led() {
     FastLED.addLeds<WS2812B, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
@@ -17,7 +18,7 @@ void Led::led_on(int16_t pin_led) { digitalWrite(pin_led, HIGH); }
 
 void Led::led(int16_t pin_led, bool state) { digitalWrite(pin_led, state); }
 
-void Led::rgb_blink(unsigned long blink_time) {
+void Led::rgb_blink(uint32_t blink_time) {
     current_millis = millis();
 
     if ((current_millis - previous_millis) >= blink_time) {
@@ -47,9 +48,9 @@ void Led::rgb_set_color(uint8_t led, uint8_t R, uint8_t G, uint8_t B) {
         for (int i = 0; i < 4; i++) {
             leds[i] = rgb;
         }
-
-    } else
+    } else {
         leds[led] = rgb;
+    }
 
     FastLED.show();
 }

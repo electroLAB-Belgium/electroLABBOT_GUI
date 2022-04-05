@@ -40,31 +40,13 @@ if __name__ == '__main__':
     VERSION_DATE, VERSION_HASH, VERSION_URL = generate_version_information()
     name = f'electroLABBOT ({VERSION_DATE.replace(":", "-")})'
 
-    recipe_command = [
-        'py',
-        '-3.10',
-        '-m',
-        'PyInstaller',
-        '-F',
-        '--workpath',
-        './',
-        '--distpath',
-        './',
-        '--specpath',
-        './py_src/build',
-        '--clean',
-        '--add-data',
-        '../package_data;package_data',
-        '-n',
-        name,
-        '--windowed',
-        '--icon=./py_src/package_data/icon.ico',
-        './py_src/gui.pyw',
-    ]
-
     run_command(['py', '-3.10', '-m', 'pip', 'install',
                 '-r', './py_src/requirements.txt'])
     run_command(['py', '-3.10', './py_src/ui_to_py_converter.py',
                 './py_src/vue_principale.ui', './py_src/vue_principale.py'])
-    run_command(recipe_command)
+    run_command(['py', '-3.10', '-m', 'PyInstaller', '-F', '--workpath',
+                 './', '--distpath', './', '--specpath', './py_src/build',
+                 '--clean', '--add-data', '../package_data;package_data',
+                 '-n', name, '--windowed', '--icon=../package_data/icon.ico',
+                 './py_src/gui.pyw'])
     shutil.rmtree(name)

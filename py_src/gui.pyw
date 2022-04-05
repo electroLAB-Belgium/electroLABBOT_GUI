@@ -543,7 +543,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
                     f'{self.base_title} - {ip_address}:{port} - Déconnecté')
                 print(traceback.format_exc(), file=sys.__stderr__)
                 sleep(1)
-                continue
 
     def websocket_received_message_process(self):
         while not self.event_stop.is_set():

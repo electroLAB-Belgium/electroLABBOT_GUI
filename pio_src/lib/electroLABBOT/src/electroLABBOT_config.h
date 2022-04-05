@@ -45,11 +45,10 @@ const uint16_t IR_threshold = 1000;
 #define ALL_MOTORS_STOP 3
 #define ALL_MOTORS_DETACH 6
 
-
 /* Buzzer related constants */
 const uint8_t BUZZER_PIN = 15;
 
 /* Button related constants */
 const uint8_t BUTTON_1 = 33;
 const uint8_t BUTTON_2 = 25;
-#endif  // PIO_SRC_LIB_ELECTROLABBOT_SRC_ELECTROLABBOT_CONFIG_H_
+#endif // PIO_SRC_LIB_ELECTROLABBOT_SRC_ELECTROLABBOT_CONFIG_H_

@@ -1,0 +1,47 @@
+---
+name: Package Applications with Pyinstaller
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - name: Clone this repository
+      uses: actions/checkout@master
+
+    - uses: actions/setup-python@master
+      with:
+        # Version range or exact version of a Python version to use,
+        # using SemVer's version range syntax
+        python-version: '3.10'
+        # optional x64 or x86. Defaults to x64 if not specified
+        architecture: 'x64'
+
+    - name: Install the requirements for the GUI
+      run: |
+        py -3.10-64 -m pip install --upgrade pip
+        py -3.10-64 -m pip install -r ./py_src/requirements.txt
+
+    - name: Install PyInstaller
+      run: py -3.10-64 -m pip install --upgrade pyinstaller
+    
+    - name: Generate the anonymiser GUI Python script from the .ui file
+      run: >
+        py -3.10-64 .\py_src\ui_to_py_converter.py
+        .\py_src\vue_principale.ui .\py_src\vue_principale.py
+
+    - name: Build the GUI package (EEG anonymiser GUI, EEG_anonymiser.exe)
+      run: >
+        py -3.10-64 -m PyInstaller -F --workpath ./py_src/build --distpath ./ --specpath ./py_src/ --clean -n "electroLABBOT - Télecommande" --icon=./ico/icon.ico --add-data './ico/;ico' .\py_src\gui.pyw
+
+    - name: >
+        Upload the artefact (.exe)
+      uses: actions/upload-artifact@v2
+      with:
+        name: Executables
+        path: ./*.exe
+

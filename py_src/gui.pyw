@@ -358,7 +358,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.websocket_received_message_worker = Worker(
             self.websocket_received_message_process)
         self.threadpool.start(self.websocket_received_message_worker)
-        self.console_worker = Worker(self._flash)
 
         # Create a "console"
         # This buffer will keep the last line ...\n
@@ -655,7 +654,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     def flash_electrolabbot(self):
         self.flash_button_changed.emit(False)
-        self.threadpool.start(self.console_worker)
+        console_worker = Worker(self._flash)
+        self.threadpool.start(console_worker)
 
     def _flash(self):
         """Flash the ESP32.

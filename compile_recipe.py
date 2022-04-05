@@ -1,6 +1,6 @@
 """ Compile the recipe for the electroLABBOT tools."""
 import locale
-import os
+import shutil
 import subprocess
 import time
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
         '-n',
         name,
         '--windowed',
-        '--icon=./package_data/logo.ico',
+        '--icon=./py_src/package_data/icon.ico',
         './py_src/gui.pyw',
     ]
 
@@ -67,4 +67,4 @@ if __name__ == '__main__':
     run_command(['py', '-3.10', './py_src/ui_to_py_converter.py',
                 './py_src/vue_principale.ui', './py_src/vue_principale.py'])
     run_command(recipe_command)
-    os.remove
+    shutil.rmtree(name)

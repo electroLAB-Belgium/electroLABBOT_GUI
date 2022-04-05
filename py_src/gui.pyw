@@ -206,6 +206,43 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.lineEdit_ip_3.setValidator(QIntValidatorFixup(0, 255, self))
         self.lineEdit_port.setValidator(QIntValidatorFixup(0, 65535, self))
 
+        # Monitor .ui changes
+        self.Appliquer.setEnabled(False)
+        self.Annuler.setEnabled(False)
+
+        def enable_settings_buttons():
+            self.Appliquer.setEnabled(True)
+            self.Annuler.setEnabled(True)
+
+        self.lineEdit_ip_0.textChanged.connect(enable_settings_buttons)
+        self.lineEdit_ip_1.textChanged.connect(enable_settings_buttons)
+        self.lineEdit_ip_2.textChanged.connect(enable_settings_buttons)
+        self.lineEdit_ip_3.textChanged.connect(enable_settings_buttons)
+        self.lineEdit_port.textChanged.connect(enable_settings_buttons)
+        self.pwm_max_value.valueChanged.connect(enable_settings_buttons)
+        self.spinBox_left_high_backward.valueChanged.connect(
+            enable_settings_buttons)
+        self.spinBox_left_low_backward.valueChanged.connect(
+            enable_settings_buttons)
+        self.spinBox_right_high_backward.valueChanged.connect(
+            enable_settings_buttons)
+        self.spinBox_right_low_backward.valueChanged.connect(
+            enable_settings_buttons)
+        self.spinBox_left_high_forward.valueChanged.connect(
+            enable_settings_buttons)
+        self.spinBox_left_low_forward.valueChanged.connect(
+            enable_settings_buttons)
+        self.spinBox_right_high_forward.valueChanged.connect(
+            enable_settings_buttons)
+        self.spinBox_right_low_forward.valueChanged.connect(
+            enable_settings_buttons)
+        self.checkBox_inverse_left_motor_direction.stateChanged.connect(
+            enable_settings_buttons)
+        self.checkBox_inverse_right_motor_direction.stateChanged.connect(
+            enable_settings_buttons)
+        self.checkBox_inverse_motors.stateChanged.connect(
+            enable_settings_buttons)
+
         # Set progress bar and slots
         self.progress_changed.connect(self.progress_bar.setValue)
         self.progress_changed.emit(0)
@@ -274,8 +311,15 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.change_state_button_2.connect(self.state_button_2.setText)
 
         # Parameters
-        self.Appliquer.clicked.connect(self.save_preferences)
-        self.Annuler.clicked.connect(self.load_preferences)
+        def reset_settings_buttons(function):
+            function()
+            self.Appliquer.setEnabled(False)
+            self.Annuler.setEnabled(False)
+
+        self.Appliquer.clicked.connect(
+            lambda: reset_settings_buttons(self.save_preferences))
+        self.Annuler.clicked.connect(
+            lambda: reset_settings_buttons(self.load_preferences))
 
         # Save preferences
         self.led_builtin_on.clicked.connect(
@@ -304,6 +348,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.threadpool = QThreadPool()
         self.threadpool.setMaxThreadCount(4)
         self.event_stop = threading.Event()
+        self.event_ip_changed = threading.Event()
         self.key_event_worker = Worker(self.keys_events_process)
         self.threadpool.start(self.key_event_worker)
         self.change_main_window_title.connect(self.setWindowTitle)
@@ -513,6 +558,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
     def websocket_process(self):
         while not self.event_stop.is_set():
             try:
+                if self.event_ip_changed.is_set():
+                    self.event_ip_changed.clear()
                 preferences = json.load(
                     open(resource_path(PREFERENCES_PATH), 'r'))
                 ip_address = preferences.get('ip_address', '192.168.100.1')
@@ -542,7 +589,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
                     f'{{"led_builtin": {led_builtin_state}}}')
                 sleep(1)
 
-                while not self.event_stop.is_set():
+                while not (self.event_stop.is_set() or
+                           self.event_ip_changed.is_set()):
                     # Send the command
                     command = self.command_queue.get()
                     altered_print(command, file=sys.__stdout__)
@@ -560,7 +608,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
                 if str(error) != '':
                     altered_print(f'EOFError: {error}', file=sys.__stderr__)
                 else:
-                    altered_print(f'EOFError: command_queue failed.', file=sys.__stderr__)
+                    altered_print(
+                        f'EOFError: command_queue failed.', file=sys.__stderr__)
 
                 # altered_print(self.command_queue.full(), file=sys.__stderr__)
             except Exception:
@@ -1064,6 +1113,11 @@ class MainApp(QMainWindow, Ui_MainWindow):
             self.command_queue.put(
                 f'{{"rgb_{colour_index}": [{colour.red()}, {colour.green()}, {colour.blue()}]}}')
 
+        ip_changed = old_preferences['ip_address'] != preferences['ip_address']
+        port_changed = old_preferences['port'] != preferences['port']
+        if (ip_changed or port_changed):
+            # altered_print('port or ip changed', file=sys.__stdout__)
+            self.event_ip_changed.set()
         json.dump(old_preferences | preferences, open(PREFERENCES_PATH, 'w'))
 
 

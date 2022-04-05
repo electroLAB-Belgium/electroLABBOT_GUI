@@ -1,4 +1,4 @@
-# −∗− coding: utf−8 −∗−
+# -*- coding: utf-8 -*-
 """PyQt6 uic module convert ui file (XML code) into py file (Python code)"""
 from PyQt6 import uic
 

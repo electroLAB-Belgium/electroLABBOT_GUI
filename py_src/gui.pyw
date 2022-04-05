@@ -85,7 +85,7 @@ def altered_print(*args, **kwargs) -> None:
         file.write(separator.join(text) + str(end))
 
 
-altered_print = print
+# altered_print = print  # For debugging purposes
 
 
 SCRIPT_PATH = exe_path()

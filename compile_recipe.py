@@ -35,28 +35,29 @@ def run_command(command):
 
 
 if __name__ == '__main__':
-    run_command(['py', '-3.10', '-m', 'pip', 'install',
+    python_version = '-3.10'
+    run_command(['py', python_version, '-m', 'pip', 'install',
                 '-r', 'build_requirements.txt'])
     VERSION_DATE, VERSION_HASH, VERSION_URL = generate_version_information()
     name = f'electroLABBOT ({VERSION_DATE.replace(":", "-")})'
 
     print('Compiling firmware...')
-    run_command(['py', '-3.10', '-m', 'platformio', 'run', '-d', './pio_src'])
+    run_command(['py', python_version, '-m', 'platformio', 'run', '-d', './pio_src'])
 
     print('Copy the firmware to the right place...')
     shutil.copy('./pio_src/.pio/build/esp32dev/firmware.bin',
                 './py_src/package_data/firmware.bin')
 
     print('Install GUI dependencies...')
-    run_command(['py', '-3.10', '-m', 'pip', 'install',
+    run_command(['py', python_version, '-m', 'pip', 'install',
                 '-r', './py_src/requirements.txt'])
 
     print('Generate GUI code...')
-    run_command(['py', '-3.10', './py_src/ui_to_py_converter.py',
+    run_command(['py', python_version, './py_src/ui_to_py_converter.py',
                 './py_src/vue_principale.ui', './py_src/vue_principale.py'])
 
     print('Compile GUI code...')
-    run_command(['py', '-3.10', '-m', 'PyInstaller', '-F', '--workpath',
+    run_command(['py', python_version, '-m', 'PyInstaller', '-F', '--workpath',
                  './', '--distpath', './', '--specpath', './py_src/build',
                  '--clean', '--add-data', '../package_data;package_data',
                  '-n', name, '--windowed', '--icon=../package_data/icon.ico',

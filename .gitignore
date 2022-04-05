@@ -135,3 +135,4 @@ py_src/vue_principale.py
 .qt_for_python/
 electroLABBOT*.exe.notanexecutable
 electroLABBOT*/
+electroLABBOT*.exe

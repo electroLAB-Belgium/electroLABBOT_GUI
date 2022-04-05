@@ -13,20 +13,19 @@ import os
 import re
 import sys
 import threading
+from tkinter.ttk import Separator
 import traceback
 import warnings
 from time import sleep, perf_counter_ns
 from functools import partial
 
 import websocket
-# import git
 
 # pylint: disable=E0611
 from PyQt6.QtCore import (
     pyqtSlot,
     Qt,
     pyqtSignal,
-    QObject,
     QThreadPool,
     QRunnable,
 )
@@ -72,6 +71,19 @@ def exe_path():
     if hasattr(sys, 'frozen'):
         return os.path.dirname(os.path.abspath(sys.executable))
     return os.path.dirname(os.path.abspath(__file__))
+
+
+def altered_print(*args, **kwargs) -> None:
+    """Freeze the print function to prevent the packaged
+    GUI from printing in the console."""
+    text = [str(arg) for arg in args]
+    separator = kwargs.get('sep', ' ')
+    end = kwargs.get('end', '\n')
+    file = kwargs.get('file', sys.stdout)
+    no_file = 'file' not in kwargs
+
+    if not hasattr(sys, 'frozen') or no_file:
+        file.write(separator.join(text) + str(end))
 
 
 SCRIPT_PATH = exe_path()
@@ -328,7 +340,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         lines = split_keep_sep(lines, '\n')
 
         for line in lines:
-            # print(line, file=sys.__stdout__)
+            # altered_print(line, file=sys.__stdout__)
 
             if line != '' and line != '\n':
                 regex = '([0-9]+)[\\s]+%'
@@ -337,8 +349,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
                 if match:
                     progress = int(match[-1])
-                # print(f'{line = }', file=sys.__stdout__)
-                # print(progress, file=sys.__stdout__)
+                # altered_print(f'{line = }', file=sys.__stdout__)
+                # altered_print(progress, file=sys.__stdout__)
 
                 if progress != -1:
                     self.progress_changed.emit(progress)
@@ -533,7 +545,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
                 while not self.event_stop.is_set():
                     # Send the command
                     command = self.command_queue.get()
-                    print(command, file=sys.__stdout__)
+                    altered_print(command, file=sys.__stdout__)
                     if command:
                         self.app_websocket.send(str(command))
 
@@ -541,7 +553,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
             except Exception:
                 self.change_main_window_title.emit(
                     f'{self.base_title} - {ip_address}:{port} - Déconnecté')
-                print(traceback.format_exc(), file=sys.__stderr__)
+                altered_print(traceback.format_exc(), file=sys.__stderr__)
                 sleep(1)
 
     def websocket_received_message_process(self):
@@ -957,7 +969,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
             FileNotFoundError,
             json.decoder.JSONDecodeError,
         ):
-            print('Error saving preferences, file not found.', file=sys.__stderr__)
+            altered_print(
+                'Error saving preferences, file not found.', file=sys.__stderr__)
 
         if self.spinBox_left_high_forward.value() > self.pwm_max_value.value():
             self.spinBox_left_high_forward.setValue(self.pwm_max_value.value())

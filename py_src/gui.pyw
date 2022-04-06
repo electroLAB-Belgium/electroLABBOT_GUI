@@ -603,6 +603,9 @@ class MainApp(QMainWindow, Ui_MainWindow):
             except ConnectionResetError as error:
                 altered_print(
                     f'ConnectionResetError: {error}', file=sys.__stderr__)
+            except TimeoutError as error:
+                altered_print(
+                    f'TimeoutError: {error}', file=sys.__stderr__)
             except EOFError as error:
                 if str(error) != '':
                     altered_print(f'EOFError: {error}', file=sys.__stderr__)
@@ -1099,7 +1102,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
             preferences['right_high_backward'] = self.pwm_max_value.value()
 
         if led_builtin is not None:
-            preferences = old_preferences
+            preferences = old_preferences | preferences
             led_builtin_state = self.led_builtin_on.isChecked()
             preferences.update({'led_builtin': led_builtin_state})
             led_builtin_state = 'true' if led_builtin_state else 'false'
@@ -1107,17 +1110,20 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
         if colour_index is not None and colour is not None:
             # Only alter colours
-            preferences = old_preferences
+            preferences = old_preferences | preferences
             preferences.update({f'rgb_{colour_index}': (
                 colour.red(), colour.green(), colour.blue())})
             self.command_queue.put(
                 f'{{"rgb_{colour_index}": [{colour.red()}, {colour.green()}, {colour.blue()}]}}')
 
-        ip_changed = old_preferences['ip_address'] != preferences['ip_address']
-        port_changed = old_preferences['port'] != preferences['port']
-        if (ip_changed or port_changed):
-            # altered_print('port or ip changed', file=sys.__stdout__)
-            self.event_ip_changed.set()
+        try:
+            ip_changed = old_preferences['ip_address'] != preferences['ip_address']
+            port_changed = old_preferences['port'] != preferences['port']
+            if (ip_changed or port_changed):
+                # altered_print('port or ip changed', file=sys.__stdout__)
+                self.event_ip_changed.set()
+        except Exception:
+            altered_print(traceback.format_exc(), file=sys.__stderr__)
         json.dump(old_preferences | preferences, open(PREFERENCES_PATH, 'w'))
 
 

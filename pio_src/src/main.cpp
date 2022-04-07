@@ -19,9 +19,9 @@ void send_sensors_values(uint32_t refresh_delay = 100) {
   static uint32_t last_send_time = millis();
 
   if (millis() - last_send_time > refresh_delay) {
-    root["distance"] = billy.look();
-    root["button_1"] = digitalRead(BUTTON_1);
-    root["button_2"] = digitalRead(BUTTON_2);
+    root["distance"] = billy.measure_distance_in_cm();
+    root["button_1"] = billy.read_button_1();
+    root["button_2"] = billy.read_button_2();
 
     String json;
     serializeJson(root, json);
@@ -31,7 +31,7 @@ void send_sensors_values(uint32_t refresh_delay = 100) {
   }
 }
 
-void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+void handle_websocket_message(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = reinterpret_cast<AwsFrameInfo *>(arg);
   if (info->final && info->index == 0 && info->len == len &&
       info->opcode == WS_TEXT) {
@@ -60,25 +60,24 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
     }
 
     if (json.containsKey("led_builtin")) {
-      digitalWrite(LED_BUILTIN, json["led_builtin"]);
-      // billy.led(LED_BUILTIN, json["led_builtin"]);
+      // digitalWrite(LED_BUILTIN, json["led_builtin"]);
+      billy.led(LED_BUILTIN, json["led_builtin"]);
     }
 
     if (json.containsKey("motor_a")) {
-      billy.move_left(json["motor_a"]);
+      billy.left_motor_speed(json["motor_a"]);
     }
 
     if (json.containsKey("motor_b")) {
-      billy.move_right(json["motor_b"]);
+      billy.right_motor_speed(json["motor_b"]);
     }
 
     if (json.containsKey("distance_sensor_angle")) {
-      billy.move_head(json["distance_sensor_angle"]);
+      billy.move_ultrasonic_sensor(json["distance_sensor_angle"]);
     }
 
-    if (json.containsKey("buzzer")) {
-      pinMode(BUZZER_PIN, OUTPUT);
-      digitalWrite(BUZZER_PIN, json["buzzer"]);
+    if (json.containsKey("active_buzzer")) {
+      billy.active_buzzer(json["active_buzzer"]);
     }
   }
 }
@@ -94,7 +93,7 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     Serial.printf("WebSocket client #%u disconnected\n", client->id());
     break;
   case WS_EVT_DATA:
-    handleWebSocketMessage(arg, data, len);
+    handle_websocket_message(arg, data, len);
     break;
   case WS_EVT_PONG:
   case WS_EVT_ERROR:
@@ -102,7 +101,7 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
   }
 }
 
-void initWebSocket() {
+void init_websocket() {
   ws.onEvent(onEvent);
   server.addHandler(&ws);
 }
@@ -111,6 +110,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println("Configuring access point...");
+  billy.begin();
 
   // You can remove the password parameter if you want the AP to be open.
   // So I don't have to type in my password every time I connect to the AP.
@@ -130,16 +130,12 @@ void setup() {
   Serial.print("AP IP address: ");
   Serial.println(WiFi.softAPIP());
 
-  initWebSocket();
+  init_websocket();
   server.begin();
   Serial.println("Server started");
-
-  pinMode(BUTTON_1, INPUT);
-  pinMode(BUTTON_2, INPUT);
 }
 
 void loop() {
   ws.cleanupClients();
-  // server.loop();
   send_sensors_values();
 }

@@ -7,78 +7,97 @@
 
 #include "electroLABBOT_config.h"
 
-class Led {
+class LED {
 private:
   void rgb_init();
-  CRGB leds[NUM_LEDS];
+  CRGB LEDs[NUM_LEDS];
 
 public:
-  Led();
-  explicit Led(int16_t pin_led);
+  LED();
+  explicit LED(int16_t pin_led);
 
-  void led_off(int16_t pin_led);
-  void led_on(int16_t pin_led);
   void led(int16_t pin_led, bool state);
+  void led(bool state);
 
-  void rgb_blink(uint32_t blink_time);
+  void rgb_blink(uint32_t blink_delay);
   void rgb_set_color(uint8_t led, uint8_t R, uint8_t G, uint8_t B);
   /*
-      led = LED_D11, LED_D12, LED_D13, LED_D14 ou LED_all (pour affecter la
+      led = LED_D11, LED_D12, LED_D13, LED_D14 ou LED_ALL (pour affecter la
      couleur aux 4 leds) R, G, B correspodnent au pourcentage de rouge, vert
      ou bleu dans la led.
   */
 };
 
-uint8_t convert_percent_to_uint8_value(uint8_t value);
-
-class Head {
+class UltrasonicSensor {
 private:
 public:
-  Head();
-  void move_head(int16_t);
-  double look();
-  uint8_t look_around();
-  // regarde où tu mets les pieds !
-  uint8_t look_where_you_step(uint8_t);
+  UltrasonicSensor();
+  void move_ultrasonic_sensor(int16_t);
+  double measure_distance_in_cm();
+  uint8_t find_clear_path();
+  uint8_t check_clearance(uint8_t);
 };
 
+void motors_task(void *parameter);
 class Motors {
 private:
-  const int16_t PWM_MOTOR1_CHANNEL = 2;
-  const int16_t PWM_MOTOR2_CHANNEL = 3;
-  const int16_t PWM_MOTORS_FREQ = 3000;
-  const int16_t PWM_MOTORS_RES = 8;
-
-  const int16_t PWM_MOTOR_MIN_VALUE_DUTYCYCLE = 60;
-  int16_t previous_left_motor_speed = 0;
-  int16_t previous_right_motor_speed = 0;
-  const int16_t max_val_motors_speed = 200;
-  const int16_t start_val_right_motor_speed = 0;
-  const int16_t start_val_left_motor_speed = 0;
+  // const int16_t PWM_MOTOR_MIN_VALUE_DUTYCYCLE = 60;
+  // int16_t previous_left_motor_speed = 0;
+  // int16_t previous_right_motor_speed = 0;
+  // const int16_t max_val_motors_speed = 200;
+  // const int16_t start_val_right_motor_speed = 0;
+  // const int16_t start_val_left_motor_speed = 0;
 
 public:
   Motors();
-  void move_left(int16_t);
-  void move_right(int16_t);
-  void move(int16_t, int16_t);
+  void begin();
+  void left_motor_speed(int16_t,
+                        uint16_t acceleration = MOTORS_ACCELERATION_PER_SECOND);
+  void
+  right_motor_speed(int16_t,
+                    uint16_t acceleration = MOTORS_ACCELERATION_PER_SECOND);
+  void motors_speed(int16_t, int16_t);
 };
 
-void attach_detach_PWM(uint8_t moteur, uint8_t vitesse, uint8_t attach);
-
-class Self_driving : public Motors, public Head {
-private:
-  uint16_t ir_sens_2_value;
-  uint16_t ir_sens_1_value;
-
-public:
-  Self_driving();
-  void self_driving_ultrason(uint8_t, uint8_t);
-  void self_driving_IR(uint8_t);
-};
+void attach_detach_PWM(uint8_t, uint8_t, uint8_t);
 
 void average_IR(int16_t[]);
 
-class ElectroLABBOT : public Led, public Self_driving {
+class IR_Sensor {
+private:
+public:
+  IR_Sensor();
+  uint16_t left_IR_sensor_read_value();
+  uint16_t right_IR_sensor_read_value();
+};
+
+class Buttons {
+private:
+public:
+  Buttons();
+  bool read_button_1();
+  bool read_button_2();
+};
+
+class Buzzer {
+public:
+  Buzzer();
+
+  //   void buzz(uint16_t frequency, uint16_t duration, uint16_t delay);
+  void buzz(uint16_t frequency, uint16_t duration);
+  void buzz(uint16_t frequency);
+  void buzz();
+
+  void active_buzzer(bool buzzer_state);
+  void no_buzz();
+};
+
+class ElectroLABBOT : public Motors,
+                      public UltrasonicSensor,
+                      public IR_Sensor,
+                      public Buttons,
+                      public LED,
+                      public Buzzer {
 private:
 public:
   ElectroLABBOT();

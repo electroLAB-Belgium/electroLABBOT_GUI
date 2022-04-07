@@ -137,3 +137,4 @@ electroLABBOT*.exe.notanexecutable
 electroLABBOT*/
 electroLABBOT*.exe
 *.bin
+*.zip

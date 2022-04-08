@@ -22,6 +22,8 @@ void send_sensors_values(uint32_t refresh_delay = 100) {
     root["distance"] = billy.measure_distance_in_cm();
     root["button_1"] = billy.read_button_1();
     root["button_2"] = billy.read_button_2();
+    root["ir_sensor_1"] = billy.right_IR_sensor_read_value();
+    root["ir_sensor_2"] = billy.left_IR_sensor_read_value();
 
     String json;
     serializeJson(root, json);
@@ -65,11 +67,11 @@ void handle_websocket_message(void *arg, uint8_t *data, size_t len) {
     }
 
     if (json.containsKey("motor_a")) {
-      billy.left_motor_speed(json["motor_a"]);
+      billy.left_motor_speed(json["motor_a"], 0);
     }
 
     if (json.containsKey("motor_b")) {
-      billy.right_motor_speed(json["motor_b"]);
+      billy.right_motor_speed(json["motor_b"], 0);
     }
 
     if (json.containsKey("distance_sensor_angle")) {

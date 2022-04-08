@@ -53,7 +53,7 @@ const int16_t PWM_MOTORS_FREQ = 3000;
 const int16_t PWM_MOTORS_RES = 12;
 
 const uint32_t MOTORS_REFRESH_MS = 20;
-const uint16_t MOTORS_ACCELERATION_PER_SECOND = 4096 * 20;
+const uint16_t MOTORS_ACCELERATION_PER_SECOND = 65535;
 
 /* Buzzer related constants */
 const uint8_t BUZZER_PIN = 15;

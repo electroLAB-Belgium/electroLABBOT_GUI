@@ -147,6 +147,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
     change_distance_sensor_value = pyqtSignal(str)
     change_state_button_1 = pyqtSignal(str)
     change_state_button_2 = pyqtSignal(str)
+    change_ir_sensor_1 = pyqtSignal(str)
+    change_ir_sensor_2 = pyqtSignal(str)
     flash_button_changed = pyqtSignal(bool)
     # show_qmessagebox_exception = pyqtSignal(dict)
     set_wait_cursor = pyqtSignal()  # type(None)
@@ -309,6 +311,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.change_distance_sensor_value.connect(self.distance_label.setText)
         self.change_state_button_1.connect(self.state_button_1.setText)
         self.change_state_button_2.connect(self.state_button_2.setText)
+        self.change_ir_sensor_1.connect(self.state_ir_1.setText)
+        self.change_ir_sensor_2.connect(self.state_ir_2.setText)
 
         # Parameters
         def reset_settings_buttons(function):
@@ -641,6 +645,14 @@ class MainApp(QMainWindow, Ui_MainWindow):
                 if 'button_2' in json_message:
                     self.change_state_button_2.emit(
                         f'{json_message["button_2"]}')
+                
+                if 'ir_sensor_1' in json_message:
+                    self.change_ir_sensor_1.emit(
+                        f'{json_message["ir_sensor_1"]}')
+
+                if 'ir_sensor_2' in json_message:
+                    self.change_ir_sensor_2.emit(
+                        f'{json_message["ir_sensor_2"]}')
 
             except websocket._exceptions.WebSocketConnectionClosedException as error:
                 altered_print(f'Websocket: {error}', file=sys.__stderr__)
@@ -706,10 +718,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.flash_button_changed.emit(True)
 
     def buzzer_button_pressed(self):
-        self.command_queue.put(f'{{ "buzzer": true }}')
+        self.command_queue.put(f'{{ "active_buzzer": true }}')
 
     def buzzer_button_released(self):
-        self.command_queue.put(f'{{ "buzzer": false }}')
+        self.command_queue.put(f'{{ "active_buzzer": false }}')
 
     def distance_sensor_angle_changed(self, angle):
         self.command_queue.put(f'{{ "distance_sensor_angle": {90 - angle} }}')

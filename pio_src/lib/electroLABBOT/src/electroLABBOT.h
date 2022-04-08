@@ -57,6 +57,10 @@ public:
   right_motor_speed(int16_t,
                     uint16_t acceleration = MOTORS_ACCELERATION_PER_SECOND);
   void motors_speed(int16_t, int16_t);
+  void motors_speed_accelerated(int16_t left_motor_speed,
+                                int16_t right_motor_speed,
+                                uint16_t left_motor_acceleration,
+                                uint16_t right_motor_acceleration);
 };
 
 void attach_detach_PWM(uint8_t, uint8_t, uint8_t);

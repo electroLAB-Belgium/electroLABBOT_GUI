@@ -135,7 +135,8 @@ void Motors::begin() {
   xQueue_left_motor_acceleration = xQueueCreate(1, sizeof(uint16_t));
 
   if (xQueue_left_motor_acceleration == NULL) {
-    ESP_LOGE(TAG, "Error creating the queue \"xQueue_left_motor_acceleration\"");
+    ESP_LOGE(TAG,
+             "Error creating the queue \"xQueue_left_motor_acceleration\"");
   }
 
   if (!xQueueSend(xQueue_left_motor_acceleration, &value, portMAX_DELAY)) {
@@ -145,27 +146,32 @@ void Motors::begin() {
   xQueue_right_motor_acceleration = xQueueCreate(1, sizeof(uint16_t));
 
   if (xQueue_right_motor_acceleration == NULL) {
-    ESP_LOGE(TAG, "Error creating the queue \"xQueue_right_motor_acceleration\"");
+    ESP_LOGE(TAG,
+             "Error creating the queue \"xQueue_right_motor_acceleration\"");
   }
 
   if (!xQueueSend(xQueue_right_motor_acceleration, &value, portMAX_DELAY)) {
-    ESP_LOGE(TAG, "Error setting the queue \"xQueue_right_motor_acceleration\"");
+    ESP_LOGE(TAG,
+             "Error setting the queue \"xQueue_right_motor_acceleration\"");
   }
 
   xQueue_right_motor_target_speed = xQueueCreate(1, sizeof(int16_t));
 
   if (xQueue_right_motor_target_speed == NULL) {
-    ESP_LOGE(TAG, "Error creating the queue \"xQueue_right_motor_target_speed\"");
+    ESP_LOGE(TAG,
+             "Error creating the queue \"xQueue_right_motor_target_speed\"");
   }
 
   if (!xQueueSend(xQueue_right_motor_target_speed, &value, portMAX_DELAY)) {
-    ESP_LOGE(TAG, "Error setting the queue \"xQueue_right_motor_target_speed\"");
+    ESP_LOGE(TAG,
+             "Error setting the queue \"xQueue_right_motor_target_speed\"");
   }
 
   xQueue_left_motor_target_speed = xQueueCreate(1, sizeof(int16_t));
 
   if (xQueue_left_motor_target_speed == NULL) {
-    ESP_LOGE(TAG, "Error creating the queue \"xQueue_left_motor_target_speed\"");
+    ESP_LOGE(TAG,
+             "Error creating the queue \"xQueue_left_motor_target_speed\"");
   }
 
   if (!xQueueSend(xQueue_left_motor_target_speed, &value, portMAX_DELAY)) {

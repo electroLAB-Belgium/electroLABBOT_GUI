@@ -6,7 +6,6 @@
 #include <ESP32Servo.h>
 #include <FastLED.h>
 
-
 #include "electroLABBOT_config.h"
 
 class LED {

@@ -2,6 +2,8 @@
 #ifndef PIO_SRC_LIB_ELECTROLABBOT_SRC_ELECTROLABBOT_CONFIG_H_
 #define PIO_SRC_LIB_ELECTROLABBOT_SRC_ELECTROLABBOT_CONFIG_H_
 
+static const char *TAG = "electroLABBOT_lib";
+
 /* Distance sensor parameters */
 const uint8_t SERVOMOTOR_PIN = 13;
 const uint8_t ULTRASONIC_SENSOR_PIN = 27;

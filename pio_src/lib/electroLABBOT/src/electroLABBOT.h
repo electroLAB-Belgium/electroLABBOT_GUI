@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <ESP32Servo.h>
 #include <FastLED.h>
+#include "esp_log.h"
 
 #include "electroLABBOT_config.h"
 
@@ -107,4 +108,4 @@ public:
   ElectroLABBOT();
 };
 
-#endif // PIO_SRC_LIB_ELECTROLABBOT_SRC_ELECTROLABBOT_H_
+#endif  // PIO_SRC_LIB_ELECTROLABBOT_SRC_ELECTROLABBOT_H_
